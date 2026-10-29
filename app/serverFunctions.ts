@@ -12,23 +12,21 @@ export function CreateServerFunctions({ doc }: Dependencies) {
     const email = data.get('email') as string;
     const nationalId = data.get('nationalId') as string;
 
-    // 1. Try to load existing headers from the sheet
+    if (name.includes('=') || email.includes('=') || nationalId.includes('=')) {
+      throw new Error('Invalid input: "=" character is not allowed.');
+    }
+
     try {
       await sheet.loadHeaderRow();
     } catch (err) {
-      // If the sheet is completely empty, loadHeaderRow throws.
-      // We catch it and set the headers manually.
-      await sheet.setHeaderRow(['name', 'email', 'nationalId']);
+      await sheet.setHeaderRow(['name', 'email', 'nationalId', 'timestamp']);
     }
 
-    // 2. Now headerValues is populated (either from the sheet or from our setHeaderRow)
     if (sheet.headerValues.length === 0) {
-      // Safety net: if headers exist but are empty strings, set them
-      await sheet.setHeaderRow(['name', 'email', 'nationalId']);
+      await sheet.setHeaderRow(['name', 'email', 'nationalId', 'timestamp']);
     }
 
-    // 3. Safely add the row using named keys
-    await sheet.addRow({ name, email, nationalId });
+    await sheet.addRow({ name, email, nationalId, timestamp: new Date().toISOString() }, {raw: true});
   }
 
   return { addData };
